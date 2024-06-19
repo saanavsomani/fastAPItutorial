@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from enum import Enum
-from typing import Optional
+# from typing import Optional
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -35,7 +36,7 @@ class SportEnum(str, Enum):
   football = "football"
   baseball = "baseball"
 
-@app.get("/sports/{sport}")
+@app.get("/sports/get/{sport}")
 async def get_sport(sport: SportEnum):
   if sport == SportEnum.basketball:
     return {"sport": sport, "GOAT": "Michael Jordan"}
@@ -71,3 +72,24 @@ async def get_user_sport(user_id: int, sport: str, q: str | None = None, short: 
   if not short:
     user_sport.update({"description" : f"{user_id} likes {sport}"})
   return user_sport
+
+
+class SportType(BaseModel):
+  name: str
+  GOAT: str
+  description: str | None = None
+
+# using Request Body
+@app.post("/sports/create")
+async def create_sport(sport: SportType) -> SportType:
+  sport_dict = sport.model_dump(); # dictionary that stores sports
+  if sport.description:
+    sport_dict.update({"description" : sport.description})
+  return sport_dict
+
+@app.put("/sports/create/{sport_id}")
+async def create_sport_put(sport_id: int, sport: SportType, q: str | None = None):
+    result = {"item_id": sport_id, **sport.model_dump()}
+    if q:
+        result.update({"q": q})
+    return result
