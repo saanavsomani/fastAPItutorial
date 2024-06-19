@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from enum import Enum
+from typing import Optional
 
 app = FastAPI()
 
@@ -26,7 +27,7 @@ async def get_current_user():
   return {"message":"This is the current user"}
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: str):
+async def get_user(user_id: int):
   return {"user_id": user_id}
 
 class SportEnum(str, Enum):
@@ -41,3 +42,32 @@ async def get_sport(sport: SportEnum):
   elif sport == SportEnum.football: # can check value - sport == "football"
     return {"sport": sport, "GOAT": "Tom Brady"}
   return {"sport": sport, "GOAT": "Babe Ruth"}
+
+
+fake_sports_db = [{"sport" : "basektball"}, {"sport" : "football"}, {"sport" : "baseball"}]
+# intro to query parameters
+@app.get("/sports")
+async def list_sports(skip: int = 0, limit: int = 10):
+  return fake_sports_db[skip: skip + limit]
+
+# allows for optional query parameters - q: Optional[str] = None
+# using pydantic type conversion
+# Ex: http://localhost:8000/sports/optional/basketball?q=dribbling&short=no
+# same as http://localhost:8000/sports/optional/basketball?q=dribbling&short=0
+@app.get("/sports/optional/{sport}")
+async def get_sport_optional(sport: str, q: str | None = None, short: bool = False):
+  sport = {"sport" : sport}
+  if q:
+    sport.update({"q" : q})
+  if not short:
+    sport.update({"description" : "Sports update"})
+  return sport
+
+@app.get("/users/{user_id}/sports/{sport}")
+async def get_user_sport(user_id: int, sport: str, q: str | None = None, short: bool = False):
+  user_sport = {"user_id" : user_id, "sport" : sport}
+  if q:
+    user_sport.update({"q" : q})
+  if not short:
+    user_sport.update({"description" : f"{user_id} likes {sport}"})
+  return user_sport
